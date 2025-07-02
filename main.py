@@ -4,9 +4,10 @@ import discord
 from discord.ext import commands, tasks
 from datetime import datetime
 import pytz
-import os  # ✅ Load the token from environment
+import os
+import json
 
-# Flask server to keep Replit/Render alive
+# === Flask Keep-Alive ===
 app = Flask('')
 
 @app.route('/')
@@ -20,16 +21,31 @@ def keep_alive():
     t = Thread(target=run)
     t.start()
 
-# ✅ Securely load Discord bot token from environment variable
+# === Load environment ===
 TOKEN = os.getenv("DISCORD_TOKEN")
-REVEAL_CHANNEL_ID = 1390112443329679451  # Replace with your test server's channel ID
+REVEAL_CHANNEL_ID = 1390112443329679451  # <-- Your updated channel ID
 
+# === Discord bot setup ===
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix='!', intents=intents)
 
-picks = {}
+# === Load/save picks ===
+PICKS_FILE = "picks.json"
 
+def load_picks():
+    if os.path.exists(PICKS_FILE):
+        with open(PICKS_FILE, "r") as f:
+            return json.load(f)
+    return {}
+
+def save_picks(picks):
+    with open(PICKS_FILE, "w") as f:
+        json.dump(picks, f, indent=4)
+
+picks = load_picks()
+
+# === Bot Events ===
 @bot.event
 async def on_ready():
     print(f"✅ Logged in as {bot.user}")
@@ -42,29 +58,14 @@ async def pick(ctx, *, golfer: str):
         return
 
     now = datetime.now(pytz.timezone('US/Eastern'))
-    picks[ctx.author.id] = {
+    picks[str(ctx.author.id)] = {
         "name": ctx.author.display_name,
         "pick": golfer,
         "timestamp": now.strftime("%Y-%m-%d %H:%M:%S %Z")
     }
 
+    save_picks(picks)
     await ctx.send(f"✅ Got it! Your pick '{golfer}' has been locked in.")
-
-# ✅ Manual test posting command
-@bot.command()
-async def testpost(ctx):
-    if not isinstance(ctx.channel, discord.TextChannel):
-        return
-
-    channel = bot.get_channel(REVEAL_CHANNEL_ID)
-    if not picks:
-        await channel.send("⚠️ No picks were submitted.")
-        return
-
-    output = "**📣 This Week’s Picks (Manual Test):**\n"
-    for p in picks.values():
-        output += f"- **{p['name']}**: {p['pick']} *(submitted {p['timestamp']})*\n"
-    await channel.send(output)
 
 @tasks.loop(minutes=1)
 async def auto_reveal_task():
@@ -79,6 +80,7 @@ async def auto_reveal_task():
             output += f"- **{p['name']}**: {p['pick']} *(submitted {p['timestamp']})*\n"
         await channel.send(output)
         picks.clear()
+        save_picks(picks)
 
 keep_alive()
 bot.run(TOKEN)
