@@ -4,7 +4,7 @@ import discord
 from discord.ext import commands, tasks
 from datetime import datetime
 import pytz
-import os  # <-- ✅ New: to load the token from environment
+import os  # ✅ Load the token from environment
 
 # Flask server to keep Replit/Render alive
 app = Flask('')
@@ -22,7 +22,7 @@ def keep_alive():
 
 # ✅ Securely load Discord bot token from environment variable
 TOKEN = os.getenv("DISCORD_TOKEN")
-REVEAL_CHANNEL_ID = 1390112443329679451  # Replace with your channel ID
+REVEAL_CHANNEL_ID = 1390112443329679451  # Replace with your test server's channel ID
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -49,6 +49,22 @@ async def pick(ctx, *, golfer: str):
     }
 
     await ctx.send(f"✅ Got it! Your pick '{golfer}' has been locked in.")
+
+# ✅ Manual test posting command
+@bot.command()
+async def testpost(ctx):
+    if not isinstance(ctx.channel, discord.TextChannel):
+        return
+
+    channel = bot.get_channel(REVEAL_CHANNEL_ID)
+    if not picks:
+        await channel.send("⚠️ No picks were submitted.")
+        return
+
+    output = "**📣 This Week’s Picks (Manual Test):**\n"
+    for p in picks.values():
+        output += f"- **{p['name']}**: {p['pick']} *(submitted {p['timestamp']})*\n"
+    await channel.send(output)
 
 @tasks.loop(minutes=1)
 async def auto_reveal_task():
