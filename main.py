@@ -67,6 +67,16 @@ async def pick(ctx, *, golfer: str):
     save_picks(picks)
     await ctx.send(f"✅ Got it! Your pick '{golfer}' has been locked in.")
 
+# === Manual test post command ===
+@bot.command()
+async def testpost(ctx):
+    channel = bot.get_channel(REVEAL_CHANNEL_ID)
+    if channel:
+        await channel.send("📣 This is a test post to confirm the bot can send messages.")
+    else:
+        await ctx.send("❌ Could not find the reveal channel. Check REVEAL_CHANNEL_ID.")
+
+# === Scheduled auto reveal ===
 @tasks.loop(minutes=1)
 async def auto_reveal_task():
     now = datetime.now(pytz.timezone('US/Eastern'))
