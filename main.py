@@ -22,7 +22,7 @@ def keep_alive():
 
 # ✅ Securely load Discord bot token from environment variable
 TOKEN = os.getenv("DISCORD_TOKEN")
-REVEAL_CHANNEL_ID = 1390047692163645480  # Replace with your channel ID
+REVEAL_CHANNEL_ID = 1390112443329679451  # Replace with your channel ID
 
 intents = discord.Intents.default()
 intents.message_content = True
