@@ -110,9 +110,9 @@ async def weeksleft(ctx):
 # === Total Earnings ===
 @bot.command()
 async def totals(ctx):
-    hiatt = sheet.acell('O5').value
-    caden = sheet.acell('O6').value
-    bennett = sheet.acell('O7').value
+    hiatt = sheet.acell('O6').value
+    caden = sheet.acell('O7').value
+    bennett = sheet.acell('O8').value
     await ctx.send(f"""**💰 Current Totals:**  
 Hiatt — {hiatt}  
 Caden — {caden}  
