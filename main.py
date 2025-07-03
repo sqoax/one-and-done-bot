@@ -33,24 +33,27 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 
 # === Load/save picks ===
 PICKS_FILE = "picks.json"
+WEEKS_FILE = "weeks.json"
 
-def load_picks():
-    if os.path.exists(PICKS_FILE):
-        with open(PICKS_FILE, "r") as f:
+def load_json(filename):
+    if os.path.exists(filename):
+        with open(filename, "r") as f:
             return json.load(f)
     return {}
 
-def save_picks(picks):
-    with open(PICKS_FILE, "w") as f:
-        json.dump(picks, f, indent=4)
+def save_json(data, filename):
+    with open(filename, "w") as f:
+        json.dump(data, f, indent=4)
 
-picks = load_picks()
+picks = load_json(PICKS_FILE)
+weeks = load_json(WEEKS_FILE)
 
 # === Bot Events ===
 @bot.event
 async def on_ready():
     print(f"✅ Logged in as {bot.user}")
     auto_reveal_task.start()
+    update_weeks_task.start()
 
 # === Anyone can DM a pick ===
 @bot.command()
@@ -66,7 +69,7 @@ async def pick(ctx, *, golfer: str):
         "timestamp": now.strftime("%Y-%m-%d %H:%M:%S %Z")
     }
 
-    save_picks(picks)
+    save_json(picks, PICKS_FILE)
     await ctx.send(f"✅ Got it! Your pick '{golfer}' has been locked in.")
 
 # === Only you can trigger test post ===
@@ -98,7 +101,18 @@ async def revealnow(ctx):
         output += f"- **{p['name']}**: {p['pick']} *(submitted {p['timestamp']})*\n"
     await channel.send(output)
     picks.clear()
-    save_picks(picks)
+    save_json(picks, PICKS_FILE)
+
+# === Show remaining weeks ===
+@bot.command()
+async def weeksleft(ctx):
+    if not weeks:
+        await ctx.send("📭 No tournaments remaining.")
+        return
+    output = "**📅 Remaining Tournaments:**\n"
+    for name, purse in weeks.items():
+        output += f"- **{name}**: ${purse:,.2f}\n"
+    await ctx.send(output)
 
 # === Auto reveal every Wednesday at 9:00 PM Eastern ===
 @tasks.loop(minutes=1)
@@ -114,7 +128,17 @@ async def auto_reveal_task():
             output += f"- **{p['name']}**: {p['pick']} *(submitted {p['timestamp']})*\n"
         await channel.send(output)
         picks.clear()
-        save_picks(picks)
+        save_json(picks, PICKS_FILE)
+
+# === Auto remove top tournament every Thursday at 3:00 AM Eastern ===
+@tasks.loop(minutes=1)
+async def update_weeks_task():
+    now = datetime.now(pytz.timezone('US/Eastern'))
+    if now.strftime('%A') == 'Thursday' and now.strftime('%H:%M') == '03:00':
+        if weeks:
+            first_key = next(iter(weeks))
+            del weeks[first_key]
+            save_json(weeks, WEEKS_FILE)
 
 keep_alive()
 bot.run(TOKEN)
