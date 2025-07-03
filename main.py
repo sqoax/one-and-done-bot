@@ -125,6 +125,27 @@ async def leader(ctx):
     amount = sheet.acell('O3').value
     await ctx.send(f"🏆 {name} is currently winning by {amount}")
 
+# === Current Loser ===
+@bot.command()
+async def loser(ctx):
+    hiatt = sheet.acell('O6').value
+    caden = sheet.acell('O7').value
+    bennett = sheet.acell('O8').value
+
+    def to_number(val):
+        return float(val.replace('$', '').replace(',', ''))
+
+    earnings = {
+        "Hiatt": to_number(hiatt),
+        "Caden": to_number(caden),
+        "Bennett": to_number(bennett)
+    }
+
+    loser_name = min(earnings, key=earnings.get)
+    loser_amount = f"${earnings[loser_name]:,.2f}"
+
+    await ctx.send(f"🏳️‍🌈 The queerbag in last place is **{loser_name}** with **{loser_amount}**")
+
 # === Test Post (Owner Only) ===
 @bot.command()
 async def testpost(ctx):
