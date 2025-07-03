@@ -23,7 +23,7 @@ def keep_alive():
 
 # === Load environment ===
 TOKEN = os.getenv("DISCORD_TOKEN")
-REVEAL_CHANNEL_ID = 1390112443329679451  # <-- Your updated channel ID
+REVEAL_CHANNEL_ID = 1390047692163645480  # <-- Your updated channel ID
 
 # === Discord bot setup ===
 intents = discord.Intents.default()
