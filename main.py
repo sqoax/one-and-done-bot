@@ -23,7 +23,8 @@ def keep_alive():
 
 # === Load environment ===
 TOKEN = os.getenv("DISCORD_TOKEN")
-REVEAL_CHANNEL_ID = 1390047692163645480  # <-- Your updated channel ID
+REVEAL_CHANNEL_ID = 1390047692163645480  # Your updated channel ID
+OWNER_ID = 512106151241056257  # Your Discord user ID
 
 # === Discord bot setup ===
 intents = discord.Intents.default()
@@ -51,6 +52,7 @@ async def on_ready():
     print(f"✅ Logged in as {bot.user}")
     auto_reveal_task.start()
 
+# === Anyone can DM a pick ===
 @bot.command()
 async def pick(ctx, *, golfer: str):
     if not isinstance(ctx.channel, discord.DMChannel):
@@ -67,18 +69,26 @@ async def pick(ctx, *, golfer: str):
     save_picks(picks)
     await ctx.send(f"✅ Got it! Your pick '{golfer}' has been locked in.")
 
-# === Manual test post command ===
+# === Only you can trigger test post ===
 @bot.command()
 async def testpost(ctx):
+    if ctx.author.id != OWNER_ID:
+        await ctx.send("❌ You're not authorized to use this command.")
+        return
+
     channel = bot.get_channel(REVEAL_CHANNEL_ID)
     if channel:
         await channel.send("📣 This is a test post to confirm the bot can send messages.")
     else:
         await ctx.send("❌ Could not find the reveal channel. Check REVEAL_CHANNEL_ID.")
 
-# === Manual reveal command ===
+# === Only you can manually reveal picks ===
 @bot.command()
 async def revealnow(ctx):
+    if ctx.author.id != OWNER_ID:
+        await ctx.send("❌ You're not authorized to use this command.")
+        return
+
     channel = bot.get_channel(REVEAL_CHANNEL_ID)
     if not picks:
         await channel.send("⚠️ No picks were submitted this week.")
@@ -90,7 +100,7 @@ async def revealnow(ctx):
     picks.clear()
     save_picks(picks)
 
-# === Scheduled auto reveal ===
+# === Auto reveal every Wednesday at 9:00 PM Eastern ===
 @tasks.loop(minutes=1)
 async def auto_reveal_task():
     now = datetime.now(pytz.timezone('US/Eastern'))
