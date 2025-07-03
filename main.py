@@ -6,6 +6,8 @@ from datetime import datetime
 import pytz
 import os
 import json
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 
 # === Flask Keep-Alive ===
 app = Flask('')
@@ -23,15 +25,22 @@ def keep_alive():
 
 # === Load environment ===
 TOKEN = os.getenv("DISCORD_TOKEN")
-REVEAL_CHANNEL_ID = 1390047692163645480  # Your updated channel ID
-OWNER_ID = 512106151241056257  # Your Discord user ID
+REVEAL_CHANNEL_ID = 1390047692163645480
+OWNER_ID = 512106151241056257
+
+# === Google Sheets Setup ===
+GOOGLE_CREDS = json.loads(os.getenv("GOOGLE_CREDS"))
+scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+creds = ServiceAccountCredentials.from_json_keyfile_dict(GOOGLE_CREDS, scope)
+client = gspread.authorize(creds)
+sheet = client.open_by_key('1_Y7feQqwJhpcnKFmIHu908AepoKHvs_qUWNhcK7WZBQ').worksheet('Sheet1')
 
 # === Discord bot setup ===
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix='!', intents=intents)
 
-# === Load/save picks ===
+# === Load/save picks and weeks ===
 PICKS_FILE = "picks.json"
 WEEKS_FILE = "weeks.json"
 
@@ -55,43 +64,27 @@ async def on_ready():
     auto_reveal_task.start()
     update_weeks_task.start()
 
-# === Anyone can DM a pick ===
+# === DM Picks ===
 @bot.command()
 async def pick(ctx, *, golfer: str):
     if not isinstance(ctx.channel, discord.DMChannel):
         await ctx.send("📬 Please DM me your pick!")
         return
-
     now = datetime.now(pytz.timezone('US/Eastern'))
     picks[str(ctx.author.id)] = {
         "name": ctx.author.display_name,
         "pick": golfer,
         "timestamp": now.strftime("%Y-%m-%d %H:%M:%S %Z")
     }
-
     save_json(picks, PICKS_FILE)
     await ctx.send(f"✅ Got it! Your pick '{golfer}' has been locked in.")
 
-# === Only you can trigger test post ===
-@bot.command()
-async def testpost(ctx):
-    if ctx.author.id != OWNER_ID:
-        await ctx.send("❌ You're not authorized to use this command.")
-        return
-
-    channel = bot.get_channel(REVEAL_CHANNEL_ID)
-    if channel:
-        await channel.send("📣 This is a test post to confirm the bot can send messages.")
-    else:
-        await ctx.send("❌ Could not find the reveal channel. Check REVEAL_CHANNEL_ID.")
-
-# === Only you can manually reveal picks ===
+# === Manual Reveal Command ===
 @bot.command()
 async def revealnow(ctx):
     if ctx.author.id != OWNER_ID:
         await ctx.send("❌ You're not authorized to use this command.")
         return
-
     channel = bot.get_channel(REVEAL_CHANNEL_ID)
     if not picks:
         await channel.send("⚠️ No picks were submitted this week.")
@@ -103,7 +96,7 @@ async def revealnow(ctx):
     picks.clear()
     save_json(picks, PICKS_FILE)
 
-# === Show remaining weeks ===
+# === Weeks Remaining ===
 @bot.command()
 async def weeksleft(ctx):
     if not weeks:
@@ -114,7 +107,37 @@ async def weeksleft(ctx):
         output += f"- **{name}**: ${purse:,.2f}\n"
     await ctx.send(output)
 
-# === Auto reveal every Wednesday at 9:00 PM Eastern ===
+# === Total Earnings ===
+@bot.command()
+async def totals(ctx):
+    hiatt = sheet.acell('O5').value
+    caden = sheet.acell('O6').value
+    bennett = sheet.acell('O7').value
+    await ctx.send(f"""**💰 Current Totals:**  
+Hiatt — {hiatt}  
+Caden — {caden}  
+Bennett — {bennett}""")
+
+# === Current Leader ===
+@bot.command()
+async def leader(ctx):
+    name = sheet.acell('O2').value
+    amount = sheet.acell('O3').value
+    await ctx.send(f"🏆 {name} is currently winning by {amount}")
+
+# === Test Post (Owner Only) ===
+@bot.command()
+async def testpost(ctx):
+    if ctx.author.id != OWNER_ID:
+        await ctx.send("❌ You're not authorized to use this command.")
+        return
+    channel = bot.get_channel(REVEAL_CHANNEL_ID)
+    if channel:
+        await channel.send("📣 This is a test post to confirm the bot can send messages.")
+    else:
+        await ctx.send("❌ Could not find the reveal channel.")
+
+# === Auto Reveal Loop ===
 @tasks.loop(minutes=1)
 async def auto_reveal_task():
     now = datetime.now(pytz.timezone('US/Eastern'))
@@ -130,7 +153,7 @@ async def auto_reveal_task():
         picks.clear()
         save_json(picks, PICKS_FILE)
 
-# === Auto remove top tournament every Thursday at 3:00 AM Eastern ===
+# === Remove First Tournament Weekly ===
 @tasks.loop(minutes=1)
 async def update_weeks_task():
     now = datetime.now(pytz.timezone('US/Eastern'))
@@ -140,5 +163,6 @@ async def update_weeks_task():
             del weeks[first_key]
             save_json(weeks, WEEKS_FILE)
 
+# === Launch Bot ===
 keep_alive()
 bot.run(TOKEN)
