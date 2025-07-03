@@ -76,11 +76,25 @@ async def testpost(ctx):
     else:
         await ctx.send("❌ Could not find the reveal channel. Check REVEAL_CHANNEL_ID.")
 
+# === Manual reveal command ===
+@bot.command()
+async def revealnow(ctx):
+    channel = bot.get_channel(REVEAL_CHANNEL_ID)
+    if not picks:
+        await channel.send("⚠️ No picks were submitted this week.")
+        return
+    output = "**📣 This Week’s Picks:**\n"
+    for p in picks.values():
+        output += f"- **{p['name']}**: {p['pick']} *(submitted {p['timestamp']})*\n"
+    await channel.send(output)
+    picks.clear()
+    save_picks(picks)
+
 # === Scheduled auto reveal ===
 @tasks.loop(minutes=1)
 async def auto_reveal_task():
     now = datetime.now(pytz.timezone('US/Eastern'))
-    if now.strftime('%A') == 'Wednesday' and now.strftime('%H:%M') == '20:00':
+    if now.strftime('%A') == 'Wednesday' and now.strftime('%H:%M') == '21:00':
         channel = bot.get_channel(REVEAL_CHANNEL_ID)
         if not picks:
             await channel.send("⚠️ No picks were submitted this week.")
