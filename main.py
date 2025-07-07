@@ -146,6 +146,35 @@ async def loser(ctx):
 
     await ctx.send(f"🏳️‍🌈 The queerbag in last place is **{loser_name}** with **{loser_amount}**")
 
+# === Gap to 1st Place ===
+@bot.command()
+async def delta(ctx):
+    hiatt = sheet.acell('O6').value
+    caden = sheet.acell('O7').value
+    bennett = sheet.acell('O8').value
+
+    def to_number(val):
+        return float(val.replace('$', '').replace(',', ''))
+
+    earnings = {
+        "Hiatt": to_number(hiatt),
+        "Caden": to_number(caden),
+        "Bennett": to_number(bennett)
+    }
+
+    sorted_players = sorted(earnings.items(), key=lambda x: x[1], reverse=True)
+    first_name, first_amount = sorted_players[0]
+
+    msg = "📊 **Gap to 1st Place:**\n\n"
+    for name, amount in sorted_players:
+        if name == first_name:
+            msg += f"🥇 {name} — $0.00\n"
+        else:
+            gap = first_amount - amount
+            msg += f"{'🥈' if name == sorted_players[1][0] else '🥉'} {name} — trailing by ${gap:,.2f}\n"
+
+    await ctx.send(msg)
+
 # === Test Post (Owner Only) ===
 @bot.command()
 async def testpost(ctx):
