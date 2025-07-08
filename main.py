@@ -142,11 +142,13 @@ async def allocate(ctx, *, message):
             odds_num = float(odds.replace('/1',''))
             picks.append((name.strip(), odds_num))
 
-        payout_target = total_cash / len(picks)  # Equal payout across all
+        # Calculate target payout using harmonic mean method
+        inverse_sum = sum(1 / odds for _, odds in picks)
+        target_payout = total_cash / inverse_sum
 
-        output = "📊 **{} Unit Allocation** (${} total):\n".format(total_units, total_cash)
+        output = f"📊 **{total_units:.1f} Unit Allocation** (${total_cash:.2f} total):"
         for name, odds in picks:
-            stake = payout_target / odds
+            stake = target_payout / odds
             units = stake / unit_value
             payout = stake * odds
             output += f"\n• **{name}** — {units:.2f}u (${stake:.2f}) — win ${payout:.2f}"
