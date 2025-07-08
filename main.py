@@ -118,6 +118,53 @@ Hiatt — {hiatt}
 Caden — {caden}  
 Bennett — {bennett}""")
 
+# === Allocate 1 Unit Evenly Across Bets ===
+@bot.command()
+async def allocate(ctx, *, raw_input: str):
+    import re
+
+    try:
+        # Parse player and odds from input
+        lines = raw_input.strip().split('\n')
+        bets = []
+        for line in lines:
+            match = re.match(r'(.+?)\s+(\d+)\s*/\s*1', line.strip())
+            if match:
+                player = match.group(1).strip()
+                odds = int(match.group(2).strip())
+                bets.append((player, odds))
+
+        if not bets:
+            await ctx.send("⚠️ Couldn’t parse any valid bets. Make sure the format is like: `Player Name 80/1`")
+            return
+
+        target_payout = 122.5  # We'll fix payout at $122.50 per player
+        stakes = []
+        total_stake = 0
+
+        for name, odds in bets:
+            stake = target_payout / odds
+            total_stake += stake
+            stakes.append((name, odds, stake))
+
+        # Normalize to 1 unit total
+        normalized = []
+        for name, odds, stake in stakes:
+            fraction = stake / total_stake
+            dollars = fraction * 1.0
+            win = dollars * odds
+            normalized.append((name, odds, fraction, dollars, win))
+
+        # Format message
+        msg = "📊 **1 Unit Allocation**\n\n"
+        for name, odds, fraction, stake, win in normalized:
+            msg += f"- **{name}** — {fraction:.2f}u (${stake:.2f}) — win ${win:.2f}\n"
+
+        await ctx.send(msg)
+
+    except Exception as e:
+        await ctx.send(f"❌ Error calculating allocation: {e}")
+
 # === Current Leader ===
 @bot.command()
 async def leader(ctx):
