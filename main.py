@@ -158,6 +158,21 @@ async def allocate(ctx, *, message):
     except Exception as e:
         await ctx.send(f"❌ Error processing command: {str(e)}")
 
+@bot.command()
+async def mypick(ctx):
+    user_id = str(ctx.author.id)
+
+    if user_id not in picks:
+        await ctx.send("❌ You haven't submitted a pick yet. DM me your pick with `!pick Your Golfer`.")
+        return
+
+    user_pick = picks[user_id]
+    name = user_pick["name"]
+    pick = user_pick["pick"]
+    timestamp = user_pick["timestamp"]
+
+    await ctx.send(f"📌 **{name}**, your most recent pick was:\n**{pick}** *(submitted at {timestamp})*")
+
 # === Current Leader ===
 @bot.command()
 async def leader(ctx):
