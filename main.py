@@ -57,13 +57,6 @@ def save_json(data, filename):
 picks = load_json(PICKS_FILE)
 weeks = load_json(WEEKS_FILE)
 
-# === Bot Events ===
-@bot.event
-async def on_ready():
-    print(f"✅ Logged in as {bot.user}")
-    auto_reveal_task.start()
-    update_weeks_task.start()
-
 # === DM Picks ===
 @bot.command()
 async def pick(ctx, *, golfer: str):
@@ -270,6 +263,7 @@ async def on_ready():
     auto_reveal_task.start()
     update_weeks_task.start()
     dm_reminder_task.start()  # 👈 Add this here too
+
 # === Test Post (Owner Only) ===
 @bot.command()
 async def testpost(ctx):
