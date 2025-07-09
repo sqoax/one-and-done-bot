@@ -38,9 +38,9 @@ sheet = client.open_by_key('1_Y7feQqwJhpcnKFmIHu908AepoKHvs_qUWNhcK7WZBQ').works
 # === Discord bot setup ===
 intents = discord.Intents.default()
 intents.message_content = True
-bot = commands.Bot(command_prefix='!', intents=intents)
+intents.members = True  # Enables access to guild members
 
-# === Load/save picks and weeks ===
+bot = commands.Bot(command_prefix='!', intents=intents)# === Load/save picks and weeks ===
 PICKS_FILE = "picks.json"
 WEEKS_FILE = "weeks.json"
 
@@ -248,6 +248,28 @@ async def submits(ctx):
 
     await ctx.send(msg)
 
+@tasks.loop(minutes=1)
+async def dm_reminder_task():
+    now = datetime.now(pytz.timezone('US/Eastern'))
+    if now.strftime('%A') == 'Wednesday' and now.strftime('%H:%M') == '18:00':
+        guild = discord.utils.get(bot.guilds)  # Gets the first server your bot is in
+        if not guild:
+            return
+
+        for member in guild.members:
+            if member.bot:
+                continue
+            try:
+                await member.send("⏰ Heads up! Make sure to DM your pick by **9 PM tonight** using `!pick Your Golfer`.")
+            except:
+                pass  # Ignore users who have DMs turned off
+
+@bot.event
+async def on_ready():
+    print(f"✅ Logged in as {bot.user}")
+    auto_reveal_task.start()
+    update_weeks_task.start()
+    dm_reminder_task.start()  # 👈 Add this here too
 # === Test Post (Owner Only) ===
 @bot.command()
 async def testpost(ctx):
