@@ -214,6 +214,23 @@ async def delta(ctx):
             msg += f"{'🥈' if name == sorted_players[1][0] else '🥉'} {name} — trailing by ${gap:,.2f}\n"
 
     await ctx.send(msg)
+@bot.command()
+async def submits(ctx):
+    if ctx.author.id != OWNER_ID:
+        await ctx.send("❌ You're not authorized to use this command.")
+        return
+
+    if not picks:
+        await ctx.send("📭 No picks have been submitted yet.")
+        return
+
+    msg = "**🕐 Pick Submission Times:**\n"
+    for p in picks.values():
+        name = p["name"]
+        time = p["timestamp"]
+        msg += f"- **{name}** submitted at `{time}`\n"
+
+    await ctx.send(msg)
 
 # === Test Post (Owner Only) ===
 @bot.command()
