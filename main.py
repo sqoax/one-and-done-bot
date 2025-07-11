@@ -89,17 +89,6 @@ async def revealnow(ctx):
     picks.clear()
     save_json(picks, PICKS_FILE)
 
-# === Weeks Remaining ===
-@bot.command()
-async def weeksleft(ctx):
-    if not weeks:
-        await ctx.send("📭 No tournaments remaining.")
-        return
-    output = "**📅 Remaining Tournaments:**\n"
-    for name, purse in weeks.items():
-        output += f"- **{name}**: ${purse:,.2f}\n"
-    await ctx.send(output)
-
 # === Total Earnings ===
 @bot.command()
 async def totals(ctx):
