@@ -58,11 +58,17 @@ picks = load_json(PICKS_FILE)
 weeks = load_json(WEEKS_FILE)
 
 # === DM Picks ===
+
 @bot.command()
 async def pick(ctx, *, golfer: str):
     if not isinstance(ctx.channel, discord.DMChannel):
         await ctx.send("📬 Please DM me your pick!")
         return
+
+    # Warn about 2-event week
+    if ',' not in golfer and ' and ' not in golfer.lower():
+        await ctx.send("⚠️ If this is a 2-event week, remember to include **both picks in one message**, like: `!pick Golfer1 and Golfer2`")
+
     now = datetime.now(pytz.timezone('US/Eastern'))
     picks[str(ctx.author.id)] = {
         "name": ctx.author.display_name,
@@ -71,6 +77,11 @@ async def pick(ctx, *, golfer: str):
     }
     save_json(picks, PICKS_FILE)
     await ctx.send(f"✅ Got it! Your pick '{golfer}' has been locked in.")
+
+    # Send public message to a general channel
+    general_channel = discord.utils.get(bot.get_all_channels(), name="general")
+    if general_channel:
+        await general_channel.send(f"📝 **{ctx.author.display_name}** just submitted a pick!")
 
 # === Manual Reveal Command ===
 @bot.command()
