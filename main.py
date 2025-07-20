@@ -83,6 +83,32 @@ async def pick(ctx, *, golfer: str):
     if general_channel:
         await general_channel.send(f"📝 **{ctx.author.display_name}** just submitted a pick!")
 
+@bot.command()
+async def pvi(ctx, odds: str, purse: str, earnings: str):
+    try:
+        # Support both +11000 and 110/1 formats
+        if '/' in odds:
+            num, denom = map(float, odds.replace(' ', '').split('/'))
+            odds_val = (num / denom) * 100
+        else:
+            odds_val = float(odds.replace('+', '').replace(',', '').strip())
+
+        purse_val = float(purse.replace(',', '').strip())
+        earnings_val = float(earnings.replace(',', '').strip())
+
+        implied_prob = 100 / (odds_val + 100)
+        relative_winnings = earnings_val / purse_val
+        pvi_score = relative_winnings / implied_prob
+
+        await ctx.send(f"""📈 **PVI Calculation**
+• Odds: {'+' if '/' not in odds else ''}{odds}
+• Implied Win Probability: {implied_prob*100:.4f}%
+• Relative Winnings: {relative_winnings*100:.2f}%
+• **PVI:** {pvi_score:.2f} {'✅' if pvi_score > 1 else '❌'}
+""")
+    except Exception as e:
+        await ctx.send("❌ Error! Format: `!pvi 11000 9000000 1760000` or `!pvi 110/1 9000000 1760000`")
+
 # === Manual Reveal Command ===
 @bot.command()
 async def revealnow(ctx):
