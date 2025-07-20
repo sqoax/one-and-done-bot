@@ -84,6 +84,45 @@ async def pick(ctx, *, golfer: str):
         await general_channel.send(f"📝 **{ctx.author.display_name}** just submitted a pick!")
 
 @bot.command()
+async def commands(ctx):
+    await ctx.send("""🛠️ **Available Commands**
+
+📬 `!pick [Golfer]` — *(DM only)* Submit your weekly pick  
+📌 `!mypick` — Show your submitted pick and timestamp  
+📈 `!pvi [odds] [purse] [earnings]` — Calculate Performance Value Index  
+💸 `!allocate` — Calculate even unit allocation across bets  
+
+📊 `!totals` — Show current total earnings  
+🏆 `!leader` — Show who’s in 1st place  
+🏳️ `!loser` — Show who’s in last  
+📈 `!delta` — Show gap to 1st  
+
+📣 `!revealnow` — *(Owner only)* Reveal all picks  
+📬 `!submits` — *(Owner only)* Show submission times  
+🧪 `!testpost` — *(Owner only)* Confirm bot can post in reveal channel  
+""")
+
+@bot.command()
+async def showme(ctx):
+    if ctx.author.id != OWNER_ID:
+        await ctx.send("❌ You're not authorized to use this command.")
+        return
+
+    if not picks:
+        await ctx.author.send("📭 No picks have been submitted yet.")
+        return
+
+    msg = "**📥 Current Submitted Picks:**\n"
+    for p in picks.values():
+        msg += f"- **{p['name']}**: {p['pick']} *(submitted {p['timestamp']})*\n"
+
+    try:
+        await ctx.author.send(msg)
+        await ctx.send("📬 Sent current picks to your DMs.")
+    except discord.Forbidden:
+        await ctx.send("❌ I couldn't DM you. Make sure your DMs are open.")
+
+@bot.command()
 async def pvi(ctx, odds: str, purse: str, earnings: str):
     try:
         # Support both +11000 and 110/1 formats
