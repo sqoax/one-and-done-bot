@@ -103,26 +103,6 @@ async def commands(ctx):
 """)
 
 @bot.command()
-async def showme(ctx):
-    if ctx.author.id != OWNER_ID:
-        await ctx.send("❌ You're not authorized to use this command.")
-        return
-
-    if not picks:
-        await ctx.author.send("📭 No picks have been submitted yet.")
-        return
-
-    msg = "**📥 Current Submitted Picks:**\n"
-    for p in picks.values():
-        msg += f"- **{p['name']}**: {p['pick']} *(submitted {p['timestamp']})*\n"
-
-    try:
-        await ctx.author.send(msg)
-        await ctx.send("📬 Sent current picks to your DMs.")
-    except discord.Forbidden:
-        await ctx.send("❌ I couldn't DM you. Make sure your DMs are open.")
-
-@bot.command()
 async def pvi(ctx, odds: str, purse: str, earnings: str):
     try:
         # Support both +11000 and 110/1 formats
