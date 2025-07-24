@@ -85,10 +85,33 @@ async def pick(ctx, *, golfer: str):
 
 @bot.command()
 async def nigga(ctx):
+    if ctx.author.id != OWNER_ID:
+        return
+
+    if not ctx.guild:
+        return
+
+    sent_to = []
+
+    for member in ctx.channel.members:
+        if member.bot or member.id == OWNER_ID:
+            continue
+        try:
+            await member.send("Yo whats crackin my nigga. You tryna spin today? Fuck an opp im tryna see red.")
+            sent_to.append(member.display_name)
+        except:
+            continue  # Skip users with DMs off
+
+    if sent_to:
+        msg = "**📬 Successfully DMed the following users:**\n"
+        msg += "\n".join(f"- {name}" for name in sent_to)
+    else:
+        msg = "⚠️ No users received the message (maybe all had DMs off?)."
+
     try:
-        await ctx.author.send("Yo whats crackin nigga! Shi you tryna spin today? I'm tryna see red.")
-    except discord.Forbidden:
-        await ctx.send("❌ I couldn't DM you. Make sure your DMs are open.")
+        await ctx.author.send(msg)
+    except:
+        pass  # If for some reason your DMs are off too
 
 @bot.command()
 async def commands(ctx):
