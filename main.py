@@ -84,6 +84,13 @@ async def pick(ctx, *, golfer: str):
         await general_channel.send(f"📝 **{ctx.author.display_name}** just submitted a pick!")
 
 @bot.command()
+async def nigga(ctx):
+    try:
+        await ctx.author.send("Yo whats crackin nigga! Shi you tryna spin today? I'm tryna see red.")
+    except discord.Forbidden:
+        await ctx.send("❌ I couldn't DM you. Make sure your DMs are open.")
+
+@bot.command()
 async def commands(ctx):
     await ctx.send("""🛠️ **Available Commands**
 
